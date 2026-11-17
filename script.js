@@ -1,97 +1,35 @@
 (() => {
   "use strict";
   const $ = id => document.getElementById(id);
-  const rounds = [
-    {title:"Monday Morning Resistance",tag:"ROUND 1 · WAKE-UP CALL",count:5,time:25},
-    {title:"The Relative Interrogation",tag:"ROUND 2 · FAMILY GROUP CHAT",count:6,time:17},
-    {title:"Brain Cell Meltdown",tag:"ROUND 3 · CHAOS MODE",count:7,time:14}
-  ];
-  const relatives=[
-    {face:"👵",name:"SHARMA AUNTY",q:"Beta, aage ka kya plan hai?",answers:["Pehle chai, phir duniya dekhenge ☕","NASA is waiting for my call 🚀","Aunty, aapka Wi-Fi password? 📶","Plan confidential hai, aunty 🤫"],good:0},
-    {face:"🧔",name:"UNCLE JI",q:"Salary kitni ho gayi ab?",answers:["Itni ki samose aa jaayein 🥟","Aapki duaon jitni unlimited 🙏","Pehle aap apna batao 😎","Salary? Main toh vibes kamata hoon ✨"],good:3},
-    {face:"👩",name:"NOSY COUSIN",q:"Shaadi kab kar rahe ho?",answers:["Pehle biryani ki date fix karo 🍛","Jab calendar permission dega 📅","Main toh abhi loading mein hoon…","Aap RSVP bhejo, main sochta hoon 💌"],good:2},
-    {face:"👴",name:"DOUBTFUL UNCLE",q:"Phone chhod do, kuch productive karo!",answers:["Ji, aapko reply kar raha hoon 😇","Phone mujhe chhodta hi nahi 📱","Aapka message save kar leta hoon 😂","Productivity ne mujhe block kiya"],good:1},
-    {face:"👩‍🦳",name:"MUMMY KI FRIEND",q:"Mummy batati hain tum bahut busy ho?",answers:["Ji, important nap chal rahi thi 😴","Bas desh sambhal raha hoon 🇮🇳","Aunty, mummy ko mat batana 🤐","Busy nahi, premium unavailable"],good:3},
-    {face:"🧑",name:"COUSIN BRO",q:"Koi good news hai life mein?",answers:["Haan, aaj network full hai 📶","Kal ka leftover pizza mila 🍕","Main khush hoon, breaking news!","Battery 100%, bas wahi 🎉"],good:2}
-  ];
-  const chaosChallenges=[
-    {q:"Your last brain cell has called in sick. What now?",opts:["Promote the nearest potato 🥔","Open 47 tabs in my brain","Take a tiny vacation 🏖️","Ask the fridge for advice"],good:2},
-    {q:"You opened your phone for one thing. It is now 2 hours later.",opts:["Remember the original mission 🧠","Blame the algorithm","Become one with the scroll 🌀","Put phone in timeout"],good:0},
-    {q:"A flying banana challenges you to a dance battle.",opts:["Moonwalk into destiny 🕺","Request a banana permit","Challenge accepted 🍌","Pretend this is normal"],good:2},
-    {q:"Your brain has 1% battery. Choose wisely.",opts:["Enable low-power thinking 🔋","Think in airplane mode","Borrow a brain cell","Restart the whole human"],good:0},
-    {q:"A random thought at 3 AM says hello.",opts:["Tell it office hours are over 🌙","Invite it for chai","Schedule it for Monday","Throw a blanket at the thought"],good:0},
-    {q:"You said 'just five more minutes' 9 times.",opts:["Time is a social construct","Accept the snooze championship 🏅","Blame time zones","Negotiate with the pillow"],good:1},
-    {q:"The computer says it is funnier than you.",opts:["Show it your meme folder 📂","Let it have this one","Challenge it to dad jokes","Unplug its imaginary ego"],good:0}
-  ];
-  const jokes={
-    win:["Okay, that was annoyingly good. 🙄","A point for you. I will recover emotionally.","You did it! Please remain humble for 0.4 seconds.","Your brain cell deserves a tiny medal. 🏅"],
-    lose:["Interesting choice. The jury is confused.","I would explain, but the answer is doing a facepalm.","The computer would like to thank your confusion.","That move was sponsored by pure chaos."],
-    levels:["New level! Your relatives have entered the chat. 📞","The nonsense has evolved. So has my ego.","CHAOS MODE. Even the rules need a holiday."]
-  };
-  let level=0,round=0,user=0,ai=0,time=25,interval=null,twist=null,running=false,locked=false,sound=false,audio=null,toastTimer=null,alarmX=0,alarmY=0,dragging=false,dragStart=null,currentRelative=null,currentChaos=null;
-  const pick=a=>a[Math.floor(Math.random()*a.length)];
-  const shuffle=a=>[...a].sort(()=>Math.random()-.5);
-  function comment(t){$("trollLine").textContent='"'+t+'"';}
-  function beep(f=540,d=.09){if(!sound)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=f;o.type="triangle";g.gain.setValueAtTime(.04,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+d);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+d);}catch(e){}}
-  function toast(t){const el=$("toast");el.textContent=t;el.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),1900);}
-  function scores(){$("userScore").textContent=user;$("aiScore").textContent=ai;}
-  function progress(){const p=level===0?round/5:level===1?(1+round/6)/3*3:(2+round/7)/3*3;$("progress").style.width=(level===0?round/5*33.333:level===1?33.333+round/6*33.333:66.666+round/7*33.334)+"%";$("levelLabel").textContent="LEVEL "+(level+1)+" OF 3";[1,2,3].forEach(n=>$("levelTab"+n).classList.toggle("active",n===level+1));}
-  function timerStart(){clearInterval(interval);time=rounds[level].time;$("timer").innerHTML=time.toFixed(1)+'<span>s</span>';$("timer").style.color="var(--yellow)";interval=setInterval(()=>{if(!running||locked)return;time-=.1;$("timer").innerHTML=Math.max(0,time).toFixed(1)+'<span>s</span>';if(time<5)$("timer").style.color="var(--pink)";if(time<=0){clearInterval(interval);resolve(false,null,"Time's up! The moment has passed. ⏳");}},100);}
-  function start(){clearInterval(interval);clearTimeout(twist);level=0;round=0;user=0;ai=0;running=true;locked=false;$("resultModal").classList.add("hidden");$("startBtn").textContent="RESTART THE NONSENSE →";scores();progress();newRound();}
-  function newRound(){
-    if(!running)return;
-    if(round>=rounds[level].count){if(level<2){level++;round=0;comment(pick(jokes.levels));toast("LEVEL "+(level+1)+" UNLOCKED!");beep(760,.15);}else{finish();return;}}
-    round++;locked=false;progress();
-    $("stageTitle").textContent=rounds[level].title;$("stageTag").textContent=rounds[level].tag;
-    $("roundCounter").textContent=level===0?"WAKE UP, LEGEND · "+(round-1)+" / 5":level===1?"REPLIES SENT · "+(round-1)+" / 6":"BRAIN CELLS LEFT · "+Math.max(0,8-round)+" / 7";
-    $("wakeScene").classList.toggle("hidden",level!==0);$("relativeScene").classList.toggle("hidden",level!==1);$("chaosScene").classList.toggle("hidden",level!==2);
-    $("challengeLabel").textContent=level===0?"YOUR MISSION":level===1?"CHOOSE YOUR REPLY":"SAVE THE LAST BRAIN CELL";
-    if(level===0)wakeRound();else if(level===1)relativeRound();else chaosRound();
-    timerStart();if(level===2)scheduleChaos();
-  }
-  function actionButtons(items,goodIndex){
-    const grid=$("replyGrid");grid.innerHTML="";
-    items.forEach((item,i)=>{const b=document.createElement("button");b.type="button";b.className="reply-btn";b.textContent=item;if(goodIndex!==null)b.addEventListener("click",()=>resolve(i===goodIndex,b));grid.appendChild(b);});
-  }
-  function wakeRound(){
-    $("instruction").textContent=pick(["That alarm thinks it owns you. Drag it out of your peaceful existence!","The snooze button has filed a restraining order. Move the alarm!","Rise and shine? Counter-offer: absolutely not. Evict that alarm!"]);
-    $("replyGrid").innerHTML='<button class="reply-btn" id="snoozeBtn" type="button">😴 SNOOZE FOREVER</button><button class="reply-btn" id="coffeeBtn" type="button">☕ NEGOTIATE WITH COFFEE</button>';
-    $("snoozeBtn").addEventListener("click",()=>resolve(true,$("snoozeBtn")));
-    $("coffeeBtn").addEventListener("click",()=>resolve(false,$("coffeeBtn")));
-    $("alarm").style.transform="translate(0,0)";alarmX=0;alarmY=0;comment(pick(["I have been awake since 5 AM. I have no hobbies.","Morning people are suspicious. I said what I said.","Your pillow has requested an extension."]));
-  }
-  function relativeRound(){
-    currentRelative=relatives[(round-1)%relatives.length];$("relativeAvatar").textContent=currentRelative.face;$("relativeQuestion").textContent='"'+currentRelative.q+'"';$("relativeName").textContent=currentRelative.name+" IS TYPING...";
-    $("instruction").textContent="Choose a reply before they ask about your five-year plan.";
-    actionButtons(shuffle(currentRelative.answers.map((a,i)=>({text:a,good:i===currentRelative.good}))).map(x=>x.text),null);
-    const correctText=currentRelative.answers[currentRelative.good];
-    [...$("replyGrid").children].forEach(b=>b.addEventListener("click",()=>{const ok=b.textContent===correctText;resolve(ok,b,ok?"Reply delivered. Aunty is typing... again.":"Seen-zoned by the family group. 😬");},{once:true}));
-    comment(pick(["I have muted 14 family groups. Rookie numbers.","Your relatives have better follow-up questions than a detective.","Say something nice. Or say something confusing. Both work."]));
-  }
-  function chaosRound(){
-    currentChaos=chaosChallenges[(round-1)%chaosChallenges.length];$("chaosCaption").textContent="BRAIN STATUS: "+pick(["BUFFERING...","ONE CELL ONLINE","VIBES ONLY","PLEASE DO NOT DISTURB"]);$("brain").textContent=pick(["🧠","🤯","🥴","🫠"]);
-    $("instruction").textContent=currentChaos.q;actionButtons(shuffle(currentChaos.opts),null);
-    const correct=currentChaos.opts[currentChaos.good];
-    [...$("replyGrid").children].forEach(b=>b.addEventListener("click",()=>resolve(b.textContent===correct,b),{once:true}));
-    comment(pick(["I am not saying you are chaotic. The data is.","Your brain has left a voicemail. It sounds concerned.","I ran a simulation. The simulation asked for a snack."]));
-  }
-  function resolve(ok,button,custom){
-    if(!running||locked)return;locked=true;clearInterval(interval);clearTimeout(twist);
-    if(ok){user+=10;$("statusLine").className="status-line good";$("statusLine").textContent="✓ "+(custom||pick(["Excellent nonsense. +10 points!","Big brain energy! +10 laugh points.","That was smooth. The computer is jealous."]));if(button)button.classList.add("good");comment(pick(jokes.win));beep(740,.13);}
-    else{ai+=5;$("statusLine").className="status-line bad";$("statusLine").textContent="✕ "+(custom||"The Troll gets +5 chaos points. Better luck next time!");if(button)button.classList.add("bad");comment(pick(jokes.lose));beep(180,.17);}
-    scores();[...$("replyGrid").children].forEach(b=>b.disabled=true);setTimeout(newRound,780);
-  }
-  function scheduleChaos(){twist=setTimeout(()=>{if(!running||locked)return;const n=Math.floor(Math.random()*3);if(n===0){document.body.classList.add("flip");toast("THE WORLD IS UPSIDE DOWN. VERY RELATABLE.");setTimeout(()=>document.body.classList.remove("flip"),1700);}else if(n===1){$("gameCard").classList.add("wiggle");toast("BRAIN CELL HAS LEFT THE BUILDING!");setTimeout(()=>$("gameCard").classList.remove("wiggle"),800);}else{$("gameCard").classList.add("shuffle-chaos");toast("BUTTONS ARE HAVING A GROUP DISCUSSION.");setTimeout(()=>$("gameCard").classList.remove("shuffle-chaos"),900);}beep(320,.12);},2300+Math.random()*2400);}
-  function finish(){running=false;clearInterval(interval);clearTimeout(twist);$("finalUser").textContent=user;$("finalAI").textContent=ai;const win=user>ai,tie=user===ai;$("resultEmoji").textContent=win?"🏆":tie?"🤝":"🤡";$("resultTitle").textContent=win?"Certified Laugh Legend!":tie?"A tie of legendary nonsense!":"The Troll has won... this time."; $("resultMessage").textContent=win?"You survived Monday, relatives AND your own brain. Iconic.":tie?"Nobody won. Everybody laughed. That is the actual win.":"The computer is celebrating with a tiny victory dance. You can absolutely get it next time.";$("resultModal").classList.remove("hidden");$("startBtn").textContent="PLAY AGAIN →";}
-  function hint(){if(!running||locked)return;const msg=level===0?"Hint: the alarm is draggable. Give it the boot!":level===1?"Hint: pick the reply that makes the family group go quiet.": "Hint: trust your last brain cell. It has seen things."; $("statusLine").className="status-line";$("statusLine").textContent=msg;comment("I am helping you. Please do not make this a habit.");}
-  function alarmMove(e){if(!running||level!==0||locked)return;const dx=e.clientX-dragStart.x,dy=e.clientY-dragStart.y;alarmX=Math.max(-115,Math.min(115,alarmX+dx));alarmY=Math.max(-65,Math.min(65,alarmY+dy));$("alarm").style.transform="translate("+alarmX+"px,"+alarmY+"px) rotate("+Math.max(-25,Math.min(25,alarmX/3))+"deg)";dragStart={x:e.clientX,y:e.clientY};if(Math.abs(alarmX)>75||Math.abs(alarmY)>42)resolve(true,null,"ALARM EVICTED! Sleep schedule restored (fictionally). 💤");}
-  $("alarm").addEventListener("pointerdown",e=>{if(!running||level!==0||locked)return;dragStart={x:e.clientX,y:e.clientY};$("alarm").setPointerCapture(e.pointerId);});
-  $("alarm").addEventListener("pointermove",e=>{if(dragStart)alarmMove(e);});
-  $("alarm").addEventListener("pointerup",()=>{dragStart=null;});
-  $("alarm").addEventListener("pointercancel",()=>{dragStart=null;});
-  $("alarm").addEventListener("click",()=>{if(!running||level!==0||locked)return;alarmX+=45;$("alarm").style.transform="translate("+alarmX+"px,0) rotate(12deg)";if(alarmX>80)resolve(true,null,"ALARM YEETED! You are the snooze champion. 🏆");});
-  $("startBtn").addEventListener("click",start);$("againBtn").addEventListener("click",start);$("hintBtn").addEventListener("click",hint);
-  $("resetBtn").addEventListener("click",()=>{clearInterval(interval);clearTimeout(twist);running=false;level=0;round=0;user=0;ai=0;locked=false;scores();progress();$("timer").innerHTML='25.0<span>s</span>';$("stageTitle").textContent=rounds[0].title;$("stageTag").textContent=rounds[0].tag;$("roundCounter").textContent="WAKE UP, LEGEND · 0 / 5";$("wakeScene").classList.remove("hidden");$("relativeScene").classList.add("hidden");$("chaosScene").classList.add("hidden");$("replyGrid").innerHTML="";$("instruction").textContent="That alarm thinks it owns you. Show it who pays the electricity bill.";$("statusLine").className="status-line";$("statusLine").textContent="Waiting for your first move. The pillow believes in you.";$("resultModal").classList.add("hidden");$("startBtn").textContent="START THE NONSENSE →";comment("Fresh chaos. Same questionable decision-making.");});
-  $("soundBtn").addEventListener("click",()=>{sound=!sound;$("soundBtn").innerHTML=(sound?"🔊 <span>Sound on</span>":"🔇 <span>Sound off</span>");$("soundBtn").setAttribute("aria-pressed",String(sound));if(sound)beep(620,.1);});
-  scores();progress();
+  const canvas = $("game"), ctx = canvas.getContext("2d");
+  const W = 900, H = 420, ground = 344;
+  let running = false, dead = false, frame = 0, score = 0, speed = 5, spawnIn = 85;
+  let obstacles = [], particles = [], clouds = [], lastTime = 0, soundOn = true, popupTimer;
+  let best = 0, player = {x:145,y:ground,w:34,h:66,vy:0,jumping:false,ducking:false};
+  try { best = Number(localStorage.getItem("memeRunBest") || 0); } catch (_) {}
+  $("best").textContent = String(best).padStart(5,"0");
+  const quips = ["Aaj nahi toh kal… par obstacle aaj hi kyun?","Mummy ne bola tha sambhal ke. Mummy was right.","Main character energy. Side character balance.","Bas ek aur run… famous last words.","Zindagi mein itne hurdles nahi dekhe jitne yahan hain.","Chai thandi, par speed garam!","Skill issue? Nahi bhai, physics issue."];
+  const jumpLines = ["ARRE O JUMPU! 🚀","YEH HUI NA SKY-HIGH ENTRY!","HOPPAAA! FULL FILMY MODE!","UP UP AUR AWAY! 🕺"];
+  const crashLines = ["Na bhai main toh haar gaya 😭","AREY YAAR! GAME NE DHOKHA DE DIYA!","SYSTEM HANG, PLAYER GONE! 🥲","BHAI SAHAB, YEH KYA HO GAYA!"];
+  function showPopup(text){const p=$("popup");p.textContent=text;p.classList.remove("show");void p.offsetWidth;p.classList.add("show");}
+  function speak(text){if(!soundOn)return;try{if("speechSynthesis"in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text.replace(/[🤣😭🚀🕺🥲]/gu,""));u.rate=1.12;u.pitch=1.25;u.volume=.65;speechSynthesis.speak(u);}}catch(_){}}
+  function beep(freq=500,duration=.07){if(!soundOn)return;try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const a=new A(),o=a.createOscillator(),g=a.createGain();o.frequency.value=freq;o.type="triangle";g.gain.setValueAtTime(.08,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+duration);o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+duration);o.onended=()=>a.close();}catch(_){}}
+  function updateHud(){$("score").textContent=String(Math.floor(score)).padStart(5,"0");$("level").textContent=String(1+Math.floor(score/450)).padStart(2,"0");}
+  function start(){if(running)return;resetState();running=true;dead=false;$("overlay").classList.add("hidden");$("status").textContent="RUNNING FROM RESPONSIBILITIES";$("quip").textContent=quips[Math.floor(Math.random()*quips.length)];lastTime=performance.now();requestAnimationFrame(loop);}
+  function resetState(){frame=0;score=0;speed=5;spawnIn=80;obstacles=[];particles=[];player.y=ground;player.vy=0;player.jumping=false;player.ducking=false;updateHud();}
+  function endGame(){if(dead)return;running=false;dead=true;beep(140,.28);showPopup(crashLines[Math.floor(Math.random()*crashLines.length)]);speak("Na bhai main toh haar gaya");$("status").textContent="RUN OVER • RESPECT THE WIPEOUT";$("overlayEmoji").textContent="😭";$("overlayTitle").textContent="PUNIT MODE: ACTIVATED";$("overlayText").textContent="Score: "+Math.floor(score)+" • Best: "+best+". The obstacle sends its regards."; $("startBtn").textContent="RUN IT BACK ↻";$("overlay").classList.remove("hidden");canvas.parentElement.classList.remove("shake");void canvas.parentElement.offsetWidth;canvas.parentElement.classList.add("shake");for(let i=0;i<18;i++)particles.push({x:player.x+15,y:player.y-25,vx:(Math.random()-.5)*8,vy:-Math.random()*7,life:55,emoji:["💧","😭","💥","🫠"][i%4]});}
+  function jump(){if(!running||dead||player.jumping)return;player.vy=-15.5;player.jumping=true;player.ducking=false;showPopup(jumpLines[Math.floor(Math.random()*jumpLines.length)]);beep(680,.08);speak("Arre O Jumpu!");}
+  function duck(on){if(running&&!player.jumping)player.ducking=on;}
+  function spawn(){const type=Math.random()<.54?"cone":Math.random()<.5?"chai":"auto";const h=type==="auto"?76:type==="chai"?52:42;obstacles.push({x:W+20,w:type==="auto"?58: type==="chai"?43:34,h,type,passed:false});}
+  function loop(now){if(!running)return;const dt=Math.min((now-lastTime)/16.67,2);lastTime=now;frame+=dt;score+=.13*dt*speed/5;speed=Math.min(11.5,5+score/260);spawnIn-=dt;if(spawnIn<=0){spawn();spawnIn=Math.max(37,95-Math.random()*27-score/35)/ (speed/5);}player.y+=player.vy*dt;player.vy+=.78*dt;if(player.y>=ground){player.y=ground;player.vy=0;player.jumping=false;}for(const o of obstacles){o.x-=speed*dt;if(!o.passed&&o.x+o.w<player.x){o.passed=true;score+=5;}}obstacles=obstacles.filter(o=>o.x>-100);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=.2*dt;p.life-=dt;}particles=particles.filter(p=>p.life>0);const ph=player.ducking?35:player.h,py=player.ducking?ground-35:player.y-player.h;for(const o of obstacles){const oh=o.h,ox=o.x+7,ow=o.w-14,oy=ground-oh+4;if(player.x+player.w-5>ox&&player.x+6<ox+ow&&py+ph-4>oy&&py+5<oy+oh){endGame();break;}}updateHud();draw();if(running)requestAnimationFrame(loop);}
+  function rounded(x,y,w,h,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();}
+  function draw(){ctx.clearRect(0,0,W,H);const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,"#b8f0ef");sky.addColorStop(1,"#f9e9c5");ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);ctx.fillStyle="#ffe18a";ctx.beginPath();ctx.arc(755,78,39,0,Math.PI*2);ctx.fill();drawCloud(120+(frame*.25)%1000-80,90,1);drawCloud(510-(frame*.16)%1000+80,145,.7);ctx.fillStyle="#83c9a5";ctx.beginPath();ctx.moveTo(0,280);for(let x=0;x<=W;x+=90)ctx.lineTo(x,235+Math.sin(x*.014+frame*.008)*23);ctx.lineTo(W,ground);ctx.lineTo(0,ground);ctx.fill();ctx.fillStyle="#5c596d";ctx.fillRect(0,ground,W,H-ground);ctx.fillStyle="#454257";ctx.fillRect(0,ground,W,9);ctx.fillStyle="#f9d66d";for(let x=-(frame*speed*1.4)%90;x<W;x+=90)rounded(x,ground+39,48,7,3,"#f9d66d");drawPlayer();for(const o of obstacles)drawObstacle(o);for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/55);ctx.font="24px sans-serif";ctx.fillText(p.emoji,p.x,p.y);ctx.globalAlpha=1;}ctx.fillStyle="#302f45";ctx.font="bold 13px Nunito";ctx.fillText("LOL-PUR EXPRESSWAY",18,27);}
+  function drawCloud(x,y,s){ctx.fillStyle="#fff9";ctx.beginPath();ctx.arc(x,y,20*s,0,Math.PI*2);ctx.arc(x+24*s,y-10*s,25*s,0,Math.PI*2);ctx.arc(x+50*s,y,18*s,0,Math.PI*2);ctx.fill();}
+  function drawPlayer(){const x=player.x+17,y=player.ducking?ground-26:player.y-42;ctx.save();ctx.lineCap="round";ctx.lineWidth=7;ctx.strokeStyle="#25243a";ctx.fillStyle="#25243a";ctx.beginPath();ctx.arc(x,y-18,12,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.moveTo(x,y-5);ctx.lineTo(x,y+20);ctx.stroke();const swing=Math.sin(frame*.35)*13;if(player.ducking){ctx.beginPath();ctx.moveTo(x,y+2);ctx.lineTo(x+22,y+13);ctx.moveTo(x,y+2);ctx.lineTo(x-18,y+12);ctx.stroke();}else{ctx.beginPath();ctx.moveTo(x,y+1);ctx.lineTo(x-15,y+12+swing*.3);ctx.moveTo(x,y+1);ctx.lineTo(x+15,y+12-swing*.3);ctx.stroke();}ctx.beginPath();ctx.moveTo(x,y+20);ctx.lineTo(x-10+swing,y+39);ctx.moveTo(x,y+20);ctx.lineTo(x+10-swing,y+39);ctx.stroke();ctx.fillStyle="#ff5fa2";ctx.fillRect(x-5,y-4,10,5);ctx.restore();}
+  function drawObstacle(o){const y=ground-o.h;ctx.save();if(o.type==="cone"){ctx.fillStyle="#ff7a45";ctx.beginPath();ctx.moveTo(o.x+o.w/2,y);ctx.lineTo(o.x+o.w,y+o.h);ctx.lineTo(o.x,y+o.h);ctx.closePath();ctx.fill();ctx.fillStyle="#fff";ctx.fillRect(o.x+9,y+o.h*.65,o.w-18,6);}else if(o.type==="chai"){rounded(o.x,y+12,o.w,o.h-12,8,"#a75e35");rounded(o.x+5,y+5,o.w-10,12,5,"#fff0c2");ctx.strokeStyle="#fff0c2";ctx.lineWidth=5;ctx.beginPath();ctx.arc(o.x+o.w-1,y+28,9,-1.2,1.2);ctx.stroke();ctx.font="17px sans-serif";ctx.fillText("☕",o.x+10,y+35);}else{rounded(o.x,y+18,o.w,o.h-18,12,"#ffcf4d");rounded(o.x+8,y,o.w-16,24,8,"#ff7b57");ctx.fillStyle="#30243c";ctx.font="bold 12px Nunito";ctx.fillText("AUTO",o.x+8,y+48);}ctx.restore();}
+  function actionDuck(){duck(true);setTimeout(()=>duck(false),450);}
+  $("startBtn").addEventListener("click",start);$("restartBtn").addEventListener("click",()=>{running=false;start();});$("jumpBtn").addEventListener("pointerdown",e=>{e.preventDefault();jump();});$("duckBtn").addEventListener("pointerdown",e=>{e.preventDefault();actionDuck();});canvas.addEventListener("pointerdown",()=>{if(!running)start();else jump();});
+  window.addEventListener("keydown",e=>{if(["Space","ArrowUp","KeyW"].includes(e.code)){e.preventDefault();if(!running)start();else jump();}if(["ArrowDown","KeyS"].includes(e.code)){e.preventDefault();duck(true);}});window.addEventListener("keyup",e=>{if(["ArrowDown","KeyS"].includes(e.code))duck(false);});
+  $("soundBtn").addEventListener("click",()=>{soundOn=!soundOn;$("soundBtn").textContent=soundOn?"🔊 SOUND ON":"🔇 SOUND OFF";$("soundBtn").setAttribute("aria-pressed",String(soundOn));if(!soundOn&&"speechSynthesis"in window)speechSynthesis.cancel();});
+  $("overlay").classList.remove("hidden");draw();
 })();
