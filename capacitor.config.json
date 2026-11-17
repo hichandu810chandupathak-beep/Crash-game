@@ -1,0 +1,6 @@
+{
+  "appId": "com.chandan.memerun",
+  "appName": "Meme Run",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
