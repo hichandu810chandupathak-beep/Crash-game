@@ -51,7 +51,7 @@
   }
   function actionButtons(items,goodIndex){
     const grid=$("replyGrid");grid.innerHTML="";
-    items.forEach((item,i)=>{const b=document.createElement("button");b.type="button";b.className="reply-btn";b.textContent=item;b.addEventListener("click",()=>resolve(i===goodIndex,b));grid.appendChild(b);});
+    items.forEach((item,i)=>{const b=document.createElement("button");b.type="button";b.className="reply-btn";b.textContent=item;if(goodIndex!==null)b.addEventListener("click",()=>resolve(i===goodIndex,b));grid.appendChild(b);});
   }
   function wakeRound(){
     $("instruction").textContent=pick(["That alarm thinks it owns you. Drag it out of your peaceful existence!","The snooze button has filed a restraining order. Move the alarm!","Rise and shine? Counter-offer: absolutely not. Evict that alarm!"]);
@@ -70,7 +70,7 @@
   }
   function chaosRound(){
     currentChaos=chaosChallenges[(round-1)%chaosChallenges.length];$("chaosCaption").textContent="BRAIN STATUS: "+pick(["BUFFERING...","ONE CELL ONLINE","VIBES ONLY","PLEASE DO NOT DISTURB"]);$("brain").textContent=pick(["🧠","🤯","🥴","🫠"]);
-    $("instruction").textContent=currentChaos.q;actionButtons(shuffle(currentChaos.opts.map((t,i)=>({t,good:i===currentChaos.good}))),null);
+    $("instruction").textContent=currentChaos.q;actionButtons(shuffle(currentChaos.opts),null);
     const correct=currentChaos.opts[currentChaos.good];
     [...$("replyGrid").children].forEach(b=>b.addEventListener("click",()=>resolve(b.textContent===correct,b),{once:true}));
     comment(pick(["I am not saying you are chaotic. The data is.","Your brain has left a voicemail. It sounds concerned.","I ran a simulation. The simulation asked for a snack."]));
