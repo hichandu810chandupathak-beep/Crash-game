@@ -1,35 +1,456 @@
 (() => {
   "use strict";
+
   const $ = id => document.getElementById(id);
-  const canvas = $("game"), ctx = canvas.getContext("2d");
-  const W = 900, H = 420, ground = 344;
-  let running = false, dead = false, frame = 0, score = 0, speed = 5, spawnIn = 85;
-  let obstacles = [], particles = [], clouds = [], lastTime = 0, soundOn = true, popupTimer;
-  let best = 0, player = {x:145,y:ground,w:34,h:66,vy:0,jumping:false,ducking:false};
-  try { best = Number(localStorage.getItem("memeRunBest") || 0); } catch (_) {}
-  $("best").textContent = String(best).padStart(5,"0");
-  const quips = ["Aaj nahi toh kal… par obstacle aaj hi kyun?","Mummy ne bola tha sambhal ke. Mummy was right.","Main character energy. Side character balance.","Bas ek aur run… famous last words.","Zindagi mein itne hurdles nahi dekhe jitne yahan hain.","Chai thandi, par speed garam!","Skill issue? Nahi bhai, physics issue."];
-  const jumpLines = ["ARRE O JUMPU! 🚀","YEH HUI NA SKY-HIGH ENTRY!","HOPPAAA! FULL FILMY MODE!","UP UP AUR AWAY! 🕺"];
-  const crashLines = ["Na bhai main toh haar gaya 😭","AREY YAAR! GAME NE DHOKHA DE DIYA!","SYSTEM HANG, PLAYER GONE! 🥲","BHAI SAHAB, YEH KYA HO GAYA!"];
-  function showPopup(text){const p=$("popup");p.textContent=text;p.classList.remove("show");void p.offsetWidth;p.classList.add("show");}
-  function speak(text){if(!soundOn)return;try{if("speechSynthesis"in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text.replace(/[🤣😭🚀🕺🥲]/gu,""));u.rate=1.12;u.pitch=1.25;u.volume=.65;speechSynthesis.speak(u);}}catch(_){}}
-  function beep(freq=500,duration=.07){if(!soundOn)return;try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const a=new A(),o=a.createOscillator(),g=a.createGain();o.frequency.value=freq;o.type="triangle";g.gain.setValueAtTime(.08,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+duration);o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+duration);o.onended=()=>a.close();}catch(_){}}
-  function updateHud(){$("score").textContent=String(Math.floor(score)).padStart(5,"0");$("level").textContent=String(1+Math.floor(score/450)).padStart(2,"0");}
-  function start(){if(running)return;resetState();running=true;dead=false;$("overlay").classList.add("hidden");$("status").textContent="RUNNING FROM RESPONSIBILITIES";$("quip").textContent=quips[Math.floor(Math.random()*quips.length)];lastTime=performance.now();requestAnimationFrame(loop);}
-  function resetState(){frame=0;score=0;speed=5;spawnIn=80;obstacles=[];particles=[];player.y=ground;player.vy=0;player.jumping=false;player.ducking=false;updateHud();}
-  function endGame(){if(dead)return;running=false;dead=true;beep(140,.28);showPopup(crashLines[Math.floor(Math.random()*crashLines.length)]);speak("Na bhai main toh haar gaya");$("status").textContent="RUN OVER • RESPECT THE WIPEOUT";$("overlayEmoji").textContent="😭";$("overlayTitle").textContent="PUNIT MODE: ACTIVATED";$("overlayText").textContent="Score: "+Math.floor(score)+" • Best: "+best+". The obstacle sends its regards."; $("startBtn").textContent="RUN IT BACK ↻";$("overlay").classList.remove("hidden");canvas.parentElement.classList.remove("shake");void canvas.parentElement.offsetWidth;canvas.parentElement.classList.add("shake");for(let i=0;i<18;i++)particles.push({x:player.x+15,y:player.y-25,vx:(Math.random()-.5)*8,vy:-Math.random()*7,life:55,emoji:["💧","😭","💥","🫠"][i%4]});}
-  function jump(){if(!running||dead||player.jumping)return;player.vy=-15.5;player.jumping=true;player.ducking=false;showPopup(jumpLines[Math.floor(Math.random()*jumpLines.length)]);beep(680,.08);speak("Arre O Jumpu!");}
-  function duck(on){if(running&&!player.jumping)player.ducking=on;}
-  function spawn(){const type=Math.random()<.54?"cone":Math.random()<.5?"chai":"auto";const h=type==="auto"?76:type==="chai"?52:42;obstacles.push({x:W+20,w:type==="auto"?58: type==="chai"?43:34,h,type,passed:false});}
-  function loop(now){if(!running)return;const dt=Math.min((now-lastTime)/16.67,2);lastTime=now;frame+=dt;score+=.13*dt*speed/5;speed=Math.min(11.5,5+score/260);spawnIn-=dt;if(spawnIn<=0){spawn();spawnIn=Math.max(37,95-Math.random()*27-score/35)/ (speed/5);}player.y+=player.vy*dt;player.vy+=.78*dt;if(player.y>=ground){player.y=ground;player.vy=0;player.jumping=false;}for(const o of obstacles){o.x-=speed*dt;if(!o.passed&&o.x+o.w<player.x){o.passed=true;score+=5;}}obstacles=obstacles.filter(o=>o.x>-100);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=.2*dt;p.life-=dt;}particles=particles.filter(p=>p.life>0);const ph=player.ducking?35:player.h,py=player.ducking?ground-35:player.y-player.h;for(const o of obstacles){const oh=o.h,ox=o.x+7,ow=o.w-14,oy=ground-oh+4;if(player.x+player.w-5>ox&&player.x+6<ox+ow&&py+ph-4>oy&&py+5<oy+oh){endGame();break;}}updateHud();draw();if(running)requestAnimationFrame(loop);}
-  function rounded(x,y,w,h,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();}
-  function draw(){ctx.clearRect(0,0,W,H);const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,"#b8f0ef");sky.addColorStop(1,"#f9e9c5");ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);ctx.fillStyle="#ffe18a";ctx.beginPath();ctx.arc(755,78,39,0,Math.PI*2);ctx.fill();drawCloud(120+(frame*.25)%1000-80,90,1);drawCloud(510-(frame*.16)%1000+80,145,.7);ctx.fillStyle="#83c9a5";ctx.beginPath();ctx.moveTo(0,280);for(let x=0;x<=W;x+=90)ctx.lineTo(x,235+Math.sin(x*.014+frame*.008)*23);ctx.lineTo(W,ground);ctx.lineTo(0,ground);ctx.fill();ctx.fillStyle="#5c596d";ctx.fillRect(0,ground,W,H-ground);ctx.fillStyle="#454257";ctx.fillRect(0,ground,W,9);ctx.fillStyle="#f9d66d";for(let x=-(frame*speed*1.4)%90;x<W;x+=90)rounded(x,ground+39,48,7,3,"#f9d66d");drawPlayer();for(const o of obstacles)drawObstacle(o);for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/55);ctx.font="24px sans-serif";ctx.fillText(p.emoji,p.x,p.y);ctx.globalAlpha=1;}ctx.fillStyle="#302f45";ctx.font="bold 13px Nunito";ctx.fillText("LOL-PUR EXPRESSWAY",18,27);}
-  function drawCloud(x,y,s){ctx.fillStyle="#fff9";ctx.beginPath();ctx.arc(x,y,20*s,0,Math.PI*2);ctx.arc(x+24*s,y-10*s,25*s,0,Math.PI*2);ctx.arc(x+50*s,y,18*s,0,Math.PI*2);ctx.fill();}
-  function drawPlayer(){const x=player.x+17,y=player.ducking?ground-26:player.y-42;ctx.save();ctx.lineCap="round";ctx.lineWidth=7;ctx.strokeStyle="#25243a";ctx.fillStyle="#25243a";ctx.beginPath();ctx.arc(x,y-18,12,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.moveTo(x,y-5);ctx.lineTo(x,y+20);ctx.stroke();const swing=Math.sin(frame*.35)*13;if(player.ducking){ctx.beginPath();ctx.moveTo(x,y+2);ctx.lineTo(x+22,y+13);ctx.moveTo(x,y+2);ctx.lineTo(x-18,y+12);ctx.stroke();}else{ctx.beginPath();ctx.moveTo(x,y+1);ctx.lineTo(x-15,y+12+swing*.3);ctx.moveTo(x,y+1);ctx.lineTo(x+15,y+12-swing*.3);ctx.stroke();}ctx.beginPath();ctx.moveTo(x,y+20);ctx.lineTo(x-10+swing,y+39);ctx.moveTo(x,y+20);ctx.lineTo(x+10-swing,y+39);ctx.stroke();ctx.fillStyle="#ff5fa2";ctx.fillRect(x-5,y-4,10,5);ctx.restore();}
-  function drawObstacle(o){const y=ground-o.h;ctx.save();if(o.type==="cone"){ctx.fillStyle="#ff7a45";ctx.beginPath();ctx.moveTo(o.x+o.w/2,y);ctx.lineTo(o.x+o.w,y+o.h);ctx.lineTo(o.x,y+o.h);ctx.closePath();ctx.fill();ctx.fillStyle="#fff";ctx.fillRect(o.x+9,y+o.h*.65,o.w-18,6);}else if(o.type==="chai"){rounded(o.x,y+12,o.w,o.h-12,8,"#a75e35");rounded(o.x+5,y+5,o.w-10,12,5,"#fff0c2");ctx.strokeStyle="#fff0c2";ctx.lineWidth=5;ctx.beginPath();ctx.arc(o.x+o.w-1,y+28,9,-1.2,1.2);ctx.stroke();ctx.font="17px sans-serif";ctx.fillText("☕",o.x+10,y+35);}else{rounded(o.x,y+18,o.w,o.h-18,12,"#ffcf4d");rounded(o.x+8,y,o.w-16,24,8,"#ff7b57");ctx.fillStyle="#30243c";ctx.font="bold 12px Nunito";ctx.fillText("AUTO",o.x+8,y+48);}ctx.restore();}
-  function actionDuck(){duck(true);setTimeout(()=>duck(false),450);}
-  $("startBtn").addEventListener("click",start);$("restartBtn").addEventListener("click",()=>{running=false;start();});$("jumpBtn").addEventListener("pointerdown",e=>{e.preventDefault();jump();});$("duckBtn").addEventListener("pointerdown",e=>{e.preventDefault();actionDuck();});canvas.addEventListener("pointerdown",()=>{if(!running)start();else jump();});
-  window.addEventListener("keydown",e=>{if(["Space","ArrowUp","KeyW"].includes(e.code)){e.preventDefault();if(!running)start();else jump();}if(["ArrowDown","KeyS"].includes(e.code)){e.preventDefault();duck(true);}});window.addEventListener("keyup",e=>{if(["ArrowDown","KeyS"].includes(e.code))duck(false);});
-  $("soundBtn").addEventListener("click",()=>{soundOn=!soundOn;$("soundBtn").textContent=soundOn?"🔊 SOUND ON":"🔇 SOUND OFF";$("soundBtn").setAttribute("aria-pressed",String(soundOn));if(!soundOn&&"speechSynthesis"in window)speechSynthesis.cancel();});
-  $("overlay").classList.remove("hidden");draw();
+  const canvas = $("game");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    $("overlayTitle").textContent = "GAME COULD NOT START";
+    $("overlayText").textContent = "Your browser does not support the canvas game.";
+    $("startBtn").disabled = true;
+    return;
+  }
+
+  const W = 900, H = 420, GROUND = 350;
+  const STORAGE_KEY = "memeRunBestV1";
+  const quips = [
+    "Aaj nahi toh kal… par obstacle aaj hi kyun?",
+    "Main runner hoon, traffic police nahi!",
+    "Leg day ka asli practical chal raha hai.",
+    "Chai thandi ho rahi hai. SPEED BADHAO!",
+    "Obstacle ko bolo appointment leke aaye."
+  ];
+  const jumpLines = ["YEH HUI NA SKY-HIGH ENTRY! 🚀", "HOPPAAA! FULL FILMY MODE!", "UP UP AUR AWAY!"];
+  const crashLines = ["Na bhai main toh haar gaya 😭", "Oof! Road ne dhoka de diya.", "Ek aur run? Is baar pakka bachenge!"];
+
+  let best = readBest();
+  let score = 0;
+  let speed = 360;
+  let elapsed = 0;
+  let spawnTimer = 1;
+  let running = false;
+  let gameOver = false;
+  let lastTime = 0;
+  let rafId = 0;
+  let frame = 0;
+  let soundOn = true;
+  let audioContext = null;
+  let popupTimer = 0;
+  let shakeTime = 0;
+  let obstacles = [];
+  let particles = [];
+  let clouds = [
+    {x:100,y:82,s:1.1},{x:440,y:130,s:.72},{x:760,y:72,s:.9}
+  ];
+
+  const player = {
+    x:112, bottom:GROUND, vy:0, w:42, h:74,
+    ducking:false, duckUntil:0, onGround:true
+  };
+
+  function readBest() {
+    try { return Math.max(0, Number(localStorage.getItem(STORAGE_KEY)) || 0); }
+    catch (_) { return 0; }
+  }
+  function saveBest() {
+    try { localStorage.setItem(STORAGE_KEY, String(best)); } catch (_) {}
+  }
+  function formatScore(value) { return String(Math.floor(value)).padStart(5, "0"); }
+  function updateHud() {
+    $("score").textContent = formatScore(score);
+    $("best").textContent = formatScore(best);
+    $("level").textContent = String(1 + Math.floor(score / 250)).padStart(2, "0");
+  }
+  function random(min, max) { return min + Math.random() * (max - min); }
+  function showPopup(message) {
+    const popup = $("popup");
+    popup.textContent = message;
+    popup.classList.remove("show");
+    void popup.offsetWidth;
+    popup.classList.add("show");
+    window.clearTimeout(popupTimer);
+    popupTimer = window.setTimeout(() => popup.classList.remove("show"), 1000);
+  }
+  function setQuip() {
+    $("quip").textContent = "“" + quips[Math.floor(Math.random() * quips.length)] + "”";
+  }
+  function beep(frequency = 520, duration = .09, type = "sine") {
+    if (!soundOn) return;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      audioContext = audioContext || new AudioCtx();
+      if (audioContext.state === "suspended") audioContext.resume();
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+      gain.gain.setValueAtTime(.055, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.001, audioContext.currentTime + duration);
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + duration);
+    } catch (_) {}
+  }
+  function burst(x, y, amount = 12) {
+    const emojis = ["✨","💨","⭐","😂"];
+    for (let i = 0; i < amount; i++) {
+      particles.push({
+        x, y, vx:random(-150,150), vy:random(-210,-45),
+        life:random(.35,.8), maxLife:.8,
+        emoji:emojis[Math.floor(Math.random()*emojis.length)]
+      });
+    }
+  }
+
+  function resetGame() {
+    score = 0;
+    speed = 360;
+    elapsed = 0;
+    spawnTimer = .9;
+    obstacles = [];
+    particles = [];
+    frame = 0;
+    shakeTime = 0;
+    player.bottom = GROUND;
+    player.vy = 0;
+    player.ducking = false;
+    player.duckUntil = 0;
+    player.onGround = true;
+    updateHud();
+  }
+
+  function startGame() {
+    if (running) return;
+    if (rafId) cancelAnimationFrame(rafId);
+    resetGame();
+    running = true;
+    gameOver = false;
+    lastTime = performance.now();
+    $("overlay").classList.add("hidden");
+    $("status").textContent = "RUNNING — DON'T BLINK!";
+    setQuip();
+    beep(660,.1);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function endGame() {
+    if (!running) return;
+    running = false;
+    gameOver = true;
+    shakeTime = .32;
+    burst(player.x + 20, player.bottom - 30, 22);
+    beep(150,.22,"sawtooth");
+    if (score > best) {
+      best = score;
+      saveBest();
+    }
+    updateHud();
+    $("status").textContent = "RUN ENDED — LEGENDARY EFFORT";
+    $("overlayEmoji").textContent = "😭";
+    $("overlayTitle").textContent = crashLines[Math.floor(Math.random() * crashLines.length)];
+    $("overlayText").textContent = "Final score: " + score + ". Best score: " + best + ". One more try?";
+    $("startBtn").innerHTML = "RUN IT BACK <span>↻</span>";
+    $("overlay").classList.remove("hidden");
+    $("canvasWrap").classList.remove("shake");
+    void $("canvasWrap").offsetWidth;
+    $("canvasWrap").classList.add("shake");
+    showPopup("Na bhai main toh haar gaya 😭");
+    setQuip();
+  }
+
+  function jump() {
+    if (!running) {
+      if (!gameOver) startGame();
+      return;
+    }
+    if (!player.onGround) return;
+    player.ducking = false;
+    player.vy = -760;
+    player.onGround = false;
+    burst(player.x + 20, player.bottom - 5, 5);
+    showPopup(jumpLines[Math.floor(Math.random() * jumpLines.length)]);
+    beep(760,.08);
+  }
+
+  function setDuck(active) {
+    if (!running) return;
+    if (active) {
+      player.ducking = true;
+      player.duckUntil = elapsed + .48;
+    } else {
+      player.ducking = false;
+    }
+  }
+
+  function spawnObstacle() {
+    const carChance = Math.min(.43, .2 + score / 1800);
+    const isCar = Math.random() < carChance;
+    if (isCar) {
+      const width = random(100,132);
+      obstacles.push({type:"car",x:W+25,w:width,h:62,passed:false,color:["#ff6b7f","#ffbd4a","#65a9ff"][Math.floor(Math.random()*3)]});
+    } else {
+      const width = random(34,44);
+      obstacles.push({type:"cone",x:W+25,w:width,h:56,passed:false});
+    }
+  }
+
+  function update(dt) {
+    elapsed += dt;
+    frame += dt * 60;
+    speed = Math.min(720, 360 + score * 1.12);
+    score += dt * (speed / 14);
+    if (score > best) best = score;
+
+    if (!player.onGround) {
+      player.vy += 2050 * dt;
+      player.bottom += player.vy * dt;
+      if (player.bottom >= GROUND) {
+        player.bottom = GROUND;
+        player.vy = 0;
+        player.onGround = true;
+      }
+    }
+    if (player.ducking && elapsed >= player.duckUntil) player.ducking = false;
+
+    spawnTimer -= dt;
+    if (spawnTimer <= 0) {
+      spawnObstacle();
+      const difficulty = Math.min(.5, score / 2400);
+      spawnTimer = random(1.05,1.55) - difficulty;
+    }
+
+    for (const obstacle of obstacles) {
+      obstacle.x -= speed * dt;
+      if (!obstacle.passed && obstacle.x + obstacle.w < player.x) {
+        obstacle.passed = true;
+        score += 8;
+        beep(880,.045);
+      }
+      if (collides(obstacle)) {
+        endGame();
+        return;
+      }
+    }
+    obstacles = obstacles.filter(obstacle => obstacle.x + obstacle.w > -40);
+
+    for (const particle of particles) {
+      particle.x += particle.vx * dt;
+      particle.y += particle.vy * dt;
+      particle.vy += 500 * dt;
+      particle.life -= dt;
+    }
+    particles = particles.filter(particle => particle.life > 0);
+    for (const cloud of clouds) {
+      cloud.x -= speed * .055 * dt;
+      if (cloud.x < -100) cloud.x = W + random(20,180);
+    }
+    if (shakeTime > 0) shakeTime = Math.max(0, shakeTime - dt);
+    updateHud();
+  }
+
+  function collides(obstacle) {
+    const px = player.x + 7;
+    const pw = player.w - 14;
+    const ph = player.ducking ? 34 : 67;
+    const py = player.bottom - ph;
+    const ox = obstacle.x + (obstacle.type === "car" ? 8 : 5);
+    const ow = obstacle.w - (obstacle.type === "car" ? 16 : 10);
+    const oy = GROUND - obstacle.h + 5;
+    const oh = obstacle.h - 5;
+    return px < ox + ow && px + pw > ox && py < oy + oh && py + ph > oy;
+  }
+
+  function roundedRect(x,y,w,h,r,color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(x,y,w,h,r);
+    ctx.fill();
+  }
+  function drawCloud(x,y,s) {
+    ctx.fillStyle = "rgba(255,255,255,.82)";
+    ctx.beginPath();
+    ctx.arc(x,y,20*s,0,Math.PI*2);
+    ctx.arc(x+25*s,y-10*s,26*s,0,Math.PI*2);
+    ctx.arc(x+53*s,y,19*s,0,Math.PI*2);
+    ctx.fill();
+  }
+  function drawBackground() {
+    const sky = ctx.createLinearGradient(0,0,0,H);
+    sky.addColorStop(0,"#a8e9ee");
+    sky.addColorStop(1,"#f9e8c4");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = "#ffe18a";
+    ctx.beginPath();
+    ctx.arc(755,78,39,0,Math.PI*2);
+    ctx.fill();
+    clouds.forEach(cloud => drawCloud(cloud.x,cloud.y,cloud.s));
+
+    ctx.fillStyle = "#83c9a5";
+    ctx.beginPath();
+    ctx.moveTo(0,280);
+    for (let x=0; x<=W; x+=45) ctx.lineTo(x,245+Math.sin(x*.014+frame*.008)*20);
+    ctx.lineTo(W,GROUND);
+    ctx.lineTo(0,GROUND);
+    ctx.fill();
+
+    ctx.fillStyle = "#5c596d";
+    ctx.fillRect(0,GROUND,W,H-GROUND);
+    ctx.fillStyle = "#454257";
+    ctx.fillRect(0,GROUND,W,9);
+    ctx.fillStyle = "#f9d66d";
+    const offset = (frame * speed / 60) % 100;
+    for (let x=-offset; x<W; x+=100) roundedRect(x,GROUND+40,54,7,3,"#f9d66d");
+    ctx.fillStyle = "rgba(25,32,49,.35)";
+    ctx.font = "800 13px Nunito, sans-serif";
+    ctx.fillText("LOL-PUR EXPRESSWAY",18,27);
+  }
+
+  function drawPlayer() {
+    const x = player.x + 20;
+    const bottom = player.bottom;
+    const duck = player.ducking;
+    const headY = duck ? bottom-32 : bottom-62;
+    const swing = player.onGround ? Math.sin(frame*.34)*15 : 7;
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = 7;
+    ctx.strokeStyle = "#25243a";
+    ctx.fillStyle = "#25243a";
+    ctx.beginPath();
+    ctx.arc(x,headY-10,11,0,Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    if (duck) {
+      ctx.moveTo(x,headY+2); ctx.lineTo(x+18,headY+12);
+      ctx.moveTo(x,headY+2); ctx.lineTo(x-16,headY+12);
+      ctx.moveTo(x,headY+12); ctx.lineTo(x+13,bottom-2);
+      ctx.moveTo(x,headY+12); ctx.lineTo(x-11,bottom-2);
+    } else {
+      ctx.moveTo(x,headY+2); ctx.lineTo(x,bottom-22);
+      ctx.moveTo(x,headY+13); ctx.lineTo(x-15,headY+25+swing*.25);
+      ctx.moveTo(x,headY+13); ctx.lineTo(x+15,headY+25-swing*.25);
+      ctx.moveTo(x,bottom-22); ctx.lineTo(x-11+swing,bottom);
+      ctx.moveTo(x,bottom-22); ctx.lineTo(x+11-swing,bottom);
+    }
+    ctx.stroke();
+    ctx.fillStyle = "#ff5fa2";
+    ctx.fillRect(x-5,headY+2,10,5);
+    ctx.restore();
+  }
+
+  function drawObstacle(obstacle) {
+    const y = GROUND - obstacle.h;
+    ctx.save();
+    if (obstacle.type === "cone") {
+      ctx.fillStyle = "#ff7948";
+      ctx.beginPath();
+      ctx.moveTo(obstacle.x+obstacle.w/2,y);
+      ctx.lineTo(obstacle.x+obstacle.w,y+obstacle.h);
+      ctx.lineTo(obstacle.x,y+obstacle.h);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#fff3d6";
+      ctx.fillRect(obstacle.x+8,y+obstacle.h*.66,obstacle.w-16,6);
+      roundedRect(obstacle.x-3,GROUND-7,obstacle.w+6,8,3,"#d95036");
+    } else {
+      roundedRect(obstacle.x,y+17,obstacle.w,obstacle.h-17,13,obstacle.color);
+      roundedRect(obstacle.x+10,y,obstacle.w-20,30,9,"#eaf8ff");
+      ctx.fillStyle = "#27334b";
+      ctx.fillRect(obstacle.x+17,y+7,obstacle.w-34,17);
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(obstacle.x+23,GROUND-4,10,0,Math.PI*2);
+      ctx.arc(obstacle.x+obstacle.w-23,GROUND-4,10,0,Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = "#34334a";
+      ctx.beginPath();
+      ctx.arc(obstacle.x+23,GROUND-4,5,0,Math.PI*2);
+      ctx.arc(obstacle.x+obstacle.w-23,GROUND-4,5,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    for (const particle of particles) {
+      ctx.globalAlpha = Math.max(0,particle.life / particle.maxLife);
+      ctx.font = "23px sans-serif";
+      ctx.fillText(particle.emoji,particle.x,particle.y);
+    }
+    ctx.globalAlpha = 1;
+  }
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    ctx.save();
+    if (shakeTime > 0) {
+      const amount = shakeTime * 15;
+      ctx.translate(random(-amount,amount),random(-amount,amount));
+    }
+    drawBackground();
+    drawPlayer();
+    obstacles.forEach(drawObstacle);
+    drawParticles();
+    ctx.restore();
+  }
+
+  function loop(now) {
+    if (!running) return;
+    const dt = Math.min(.033,Math.max(0,(now-lastTime)/1000));
+    lastTime = now;
+    update(dt);
+    draw();
+    if (running) rafId = requestAnimationFrame(loop);
+  }
+
+  $("startBtn").addEventListener("click",startGame);
+  $("restartBtn").addEventListener("click",startGame);
+  $("jumpBtn").addEventListener("pointerdown",event => {event.preventDefault();jump();});
+  $("duckBtn").addEventListener("pointerdown",event => {event.preventDefault();setDuck(true);});
+  $("duckBtn").addEventListener("pointerup",() => setDuck(false));
+  $("duckBtn").addEventListener("pointercancel",() => setDuck(false));
+  $("duckBtn").addEventListener("pointerleave",() => setDuck(false));
+  canvas.addEventListener("pointerdown",event => {
+    if (event.pointerType === "touch" || event.pointerType === "pen") {
+      event.preventDefault();
+      jump();
+    }
+  });
+
+  window.addEventListener("keydown",event => {
+    if (["Space","ArrowUp","KeyW"].includes(event.code)) {
+      event.preventDefault();
+      if (!event.repeat) jump();
+    } else if (["ArrowDown","KeyS"].includes(event.code)) {
+      event.preventDefault();
+      setDuck(true);
+    }
+  });
+  window.addEventListener("keyup",event => {
+    if (["ArrowDown","KeyS"].includes(event.code)) setDuck(false);
+  });
+  window.addEventListener("blur",() => setDuck(false));
+  document.addEventListener("visibilitychange",() => {
+    if (document.hidden && running) {
+      running = false;
+      $("status").textContent = "PAUSED — TAP START TO RESUME";
+      $("overlayEmoji").textContent = "⏸️";
+      $("overlayTitle").textContent = "QUICK BREAK!";
+      $("overlayText").textContent = "Your run is paused while this tab is away. Start a fresh run when ready.";
+      $("startBtn").innerHTML = "START RUN <span>→</span>";
+      $("overlay").classList.remove("hidden");
+    }
+  });
+  $("soundBtn").addEventListener("click",() => {
+    soundOn = !soundOn;
+    $("soundBtn").textContent = soundOn ? "🔊 SOUND ON" : "🔇 SOUND OFF";
+    $("soundBtn").setAttribute("aria-pressed",String(soundOn));
+    if (soundOn) beep(520,.07);
+  });
+
+  updateHud();
+  draw();
 })();
