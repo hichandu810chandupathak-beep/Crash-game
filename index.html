@@ -2,78 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101326">
-  <meta name="description" content="A funny repair-shop arcade loop. Outsmart the computer, survive the clients, and escape the chaos.">
-  <title>Repair Shop Nightmare — The Loop Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#171226">
+  <meta name="description" content="The Ultimate Troll & Laugh Loop — three rounds of everyday chaos against a cheeky computer.">
+  <title>The Ultimate Troll & Laugh Loop</title>
   <link rel="stylesheet" href="style.css">
   <script src="script.js" defer></script>
 </head>
 <body>
-  <main class="shell" id="gameShell">
-    <header class="topbar">
-      <a class="brand" href="#" aria-label="Repair Shop Nightmare home"><span class="brand-mark">🔧</span><span>LOOP<span class="brand-accent">.LAB</span></span></a>
-      <div class="top-meta"><span class="live-dot"></span> PLAYER VS COMPUTER <span class="meta-divider">•</span> NO REAL STAKES, JUST DRAMA</div>
-      <button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false" title="Toggle sound">🔇 Sound off</button>
+  <main class="app" id="app">
+    <header class="header">
+      <a class="logo" href="#" aria-label="Laugh Loop home"><span class="logo-icon">🤣</span><span>LAUGH<span>LOOP</span></span></a>
+      <div class="header-tag"><i></i> USER VS COMPUTER</div>
+      <button class="sound-btn" id="soundBtn" type="button" aria-pressed="false">🔇 <span>Sound off</span></button>
     </header>
 
-    <section class="hero">
-      <div class="eyebrow"><span>THE DAILY GRIND, BUT FUNNIER</span><span class="eyebrow-line"></span></div>
-      <h1>REPAIR SHOP <span>NIGHTMARE</span></h1>
-      <p class="hero-copy">One phone. Twelve problems. One computer that definitely needs attitude adjustment.</p>
+    <section class="intro">
+      <p class="kicker">YOUR DAILY DOSE OF NONSENSE</p>
+      <h1>THE ULTIMATE<br><span>TROLL & LAUGH LOOP</span></h1>
+      <p class="subtitle">Three levels. Zero seriousness. One computer with absolutely no manners.</p>
     </section>
 
-    <section class="scoreboard" aria-label="Scoreboard">
-      <article class="score-card player-card">
-        <div class="score-label"><span class="avatar">🧑‍🔧</span> YOU <span class="you-tag">HUMAN</span></div>
-        <div class="score-number" id="playerScore">0</div>
-        <div class="score-caption">Repairs completed</div>
-      </article>
+    <section class="score-row" aria-label="Scoreboard">
+      <div class="score-box human"><div class="score-head"><span>🧍 YOU</span><small>THE MAIN CHARACTER</small></div><strong id="userScore">0</strong><small>LAUGH POINTS</small></div>
       <div class="versus">VS</div>
-      <article class="score-card cpu-card">
-        <div class="score-label"><span class="avatar">🤖</span> CHIP <span class="cpu-tag">THE AI</span></div>
-        <div class="score-number" id="cpuScore">0</div>
-        <div class="score-caption">Computer's suspicious points</div>
-      </article>
+      <div class="score-box computer"><div class="score-head"><span>🤡 THE TROLL</span><small>COMPUTER</small></div><strong id="aiScore">0</strong><small>CHAOS POINTS</small></div>
     </section>
 
-    <section class="level-strip" aria-label="Game levels">
-      <div class="level-heading"><span>YOUR SHIFT</span><span id="levelName">LEVEL 1 / 3 · WARM-UP</span></div>
-      <div class="level-track"><span class="level-fill" id="levelFill"></span></div>
-      <div class="level-tabs">
-        <span class="level-tab active" id="tab1">01 <b>Warm-up</b></span>
-        <span class="level-tab" id="tab2">02 <b>Glitch shift</b></span>
-        <span class="level-tab" id="tab3">03 <b>Chaos mode</b></span>
+    <nav class="level-nav" aria-label="Game levels">
+      <div class="progress-top"><span>THE NONSENSE METER</span><span id="levelLabel">LEVEL 1 OF 3</span></div>
+      <div class="progress-track"><span id="progress"></span></div>
+      <div class="level-list">
+        <span class="level-item active" id="levelTab1">01 <b>Monday Morning</b></span>
+        <span class="level-item" id="levelTab2">02 <b>Relative Radar</b></span>
+        <span class="level-item" id="levelTab3">03 <b>Brain Meltdown</b></span>
       </div>
+    </nav>
+
+    <section class="game-card" id="gameCard">
+      <div class="game-card-head">
+        <div><p class="micro-label" id="stageTag">ROUND 1 · WAKE-UP CALL</p><h2 id="stageTitle">Monday Morning Resistance</h2></div>
+        <div class="clock"><small>TIME LEFT</small><strong id="timer">25.0<span>s</span></strong></div>
+      </div>
+
+      <div class="stage-area" id="stageArea">
+        <div class="wake-scene" id="wakeScene">
+          <div class="sun">☀️</div>
+          <div class="bed">🛏️</div>
+          <div class="alarm" id="alarm" role="button" tabindex="0" aria-label="Drag or tap the alarm clock away">⏰</div>
+          <div class="sleepy">😴</div>
+          <span class="z z1">Z</span><span class="z z2">z</span>
+          <div class="alarm-hint">DRAG THE ALARM AWAY<br><small>or tap it repeatedly!</small></div>
+        </div>
+        <div class="relative-scene hidden" id="relativeScene">
+          <div class="relative-avatar" id="relativeAvatar">👵</div>
+          <div class="speech-card"><span class="micro-label">INCOMING RELATIVE</span><p id="relativeQuestion">"Beta, aage ka kya plan hai?"</p><small id="relativeName">AUNTY JI IS TYPING...</small></div>
+        </div>
+        <div class="chaos-scene hidden" id="chaosScene">
+          <div class="brain" id="brain">🧠</div><div class="chaos-caption" id="chaosCaption">Brain cells connecting...</div>
+          <div class="floating-emoji e1">🍌</div><div class="floating-emoji e2">🦆</div><div class="floating-emoji e3">🛸</div>
+        </div>
+      </div>
+
+      <div class="challenge-row"><span class="micro-label" id="challengeLabel">YOUR MISSION</span><span class="round-counter" id="roundCounter">WAKE UP, LEGEND · 0 / 5</span></div>
+      <div class="action-area" id="actionArea">
+        <p class="instruction" id="instruction">That alarm thinks it owns you. Show it who pays the electricity bill.</p>
+        <div class="reply-grid" id="replyGrid"></div>
+      </div>
+      <div class="status-line" id="statusLine" role="status" aria-live="polite">Waiting for your first move. The pillow believes in you.</div>
+      <div class="card-footer"><span id="scoringTip">✨ Every successful move earns +10 laugh points.</span><button class="hint-btn" id="hintBtn" type="button">GIVE ME A HINT</button></div>
     </section>
 
-    <section class="game-panel" id="gamePanel">
-      <div class="panel-top">
-        <div><span class="ticket-label">CURRENT CUSTOMER TICKET</span><h2 id="ticketTitle">The Phone Is Possessed</h2></div>
-        <div class="timer-wrap"><span>SHIFT TIMER</span><strong id="timer">20.0<span>s</span></strong></div>
-      </div>
-      <div class="challenge">
-        <div class="phone-scene" id="phoneScene" aria-hidden="true"><div class="phone"><div class="phone-notch"></div><div class="phone-face" id="phoneFace">😵‍💫</div><div class="phone-crack"></div></div><span class="spark spark-one">✦</span><span class="spark spark-two">✧</span></div>
-        <div class="challenge-copy"><span class="ticket-label">CLIENT SAYS</span><p id="clientLine">"My phone only charges when I compliment it."</p><div class="ai-bubble"><span class="chip-avatar">🤖</span><span id="quip">CHIP: Easy. Flatter the charging port. Obviously.</span></div></div>
-      </div>
-      <div class="action-heading"><span>WHAT'S YOUR FIX?</span><span id="roundCount">TICKET 1 / 5</span></div>
-      <div class="action-grid" id="actionGrid">
-        <button class="action-btn" type="button" data-action="charge">⚡ <span>Check charger</span></button>
-        <button class="action-btn" type="button" data-action="restart">🔄 <span>Restart phone</span></button>
-        <button class="action-btn" type="button" data-action="clean">🧹 <span>Clean port</span></button>
-      </div>
-      <div class="feedback" id="feedback" role="status" aria-live="polite">Pick a fix before the customer starts a podcast about it.</div>
-      <div class="panel-bottom"><span>⚡ Correct fix: +10 points · Wrong fix: CHIP gets +5</span><button class="give-up" id="hintButton" type="button">Need a hint?</button></div>
-    </section>
+    <section class="troll-panel"><div class="troll-face" id="trollFace">🤖</div><div><span class="micro-label">COMPUTER'S UNFILTERED THOUGHTS</span><p id="trollLine">"I woke up at 5 AM. To be annoying. And I am thriving."</p></div></section>
 
-    <section class="commentary-bar"><div class="chip-big">🤖</div><div><span class="ticket-label">CHIP'S LIVE COMMENTARY</span><p id="commentary">"Welcome to the shop. I have already filed a complaint about your confidence."</p></div></section>
-
-    <section class="footer-actions"><button class="primary-btn" id="startButton" type="button">START THE SHIFT <span>→</span></button><button class="secondary-btn" id="resetButton" type="button">↻ Reset game</button></section>
-    <p class="micro-note">A tiny arcade game for a big break. No money, no pressure — just pixels and punchlines.</p>
+    <div class="controls"><button class="main-btn" id="startBtn" type="button">START THE NONSENSE <span>→</span></button><button class="reset-btn" id="resetBtn" type="button">↻ RESET</button></div>
+    <p class="disclaimer">A silly little game for a lighter day. No stakes, no stress, just laughs. 💛</p>
   </main>
 
-  <div class="modal-backdrop hidden" id="resultModal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
-    <div class="result-card"><div class="result-emoji" id="resultEmoji">🏆</div><p class="ticket-label">SHIFT REPORT</p><h2 id="resultTitle">You survived the shift!</h2><p id="resultText">The shop is still standing. Mostly.</p><div class="result-scores"><span>YOU <b id="finalPlayer">0</b></span><span>CHIP <b id="finalCpu">0</b></span></div><button class="primary-btn" id="playAgainButton" type="button">RUN IT BACK <span>→</span></button></div>
+  <div class="modal hidden" id="resultModal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <div class="modal-card"><div class="trophy" id="resultEmoji">🏆</div><p class="micro-label">OFFICIAL NONSENSE REPORT</p><h2 id="resultTitle">You are a certified legend!</h2><p id="resultMessage">The computer is typing an apology. Slowly.</p><div class="final-score"><div>YOU<strong id="finalUser">0</strong></div><div>THE TROLL<strong id="finalAI">0</strong></div></div><button class="main-btn" id="againBtn" type="button">ONE MORE ROUND <span>→</span></button></div>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
